@@ -1,0 +1,26 @@
+{
+"Kadariya_2016": [
+				{"study_id": "study_start",
+				"mouse_line": "FVB/N",
+				"male": {},
+				 "female": {"total_mice_start": 93,
+							"total_mice_end": 93,
+							"study_duration_weeks": 0,
+							"tumours": 0}},
+				{"study_id": "12_months",
+				"mouse_line": "FVB/N",
+				"male": {},
+				 "female": {"total_mice_start": 93,
+							"total_mice_end": 33,
+							"study_duration_weeks": 52,
+							"tumours": 0}},
+				{"study_id": "study_termination",
+				"mouse_line": "FVB/N",
+				"male": {},
+				 "female": {"total_mice_start": 93,
+							"total_mice_end": 0,
+							"study_duration_weeks": 134,
+							"tumours": 2}}
+				
+				]
+}

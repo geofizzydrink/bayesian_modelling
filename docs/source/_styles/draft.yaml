@@ -1,0 +1,60 @@
+pageTemplates:
+    decoratedPage:
+        defaultFooter: &draftFooterCentered |
+            .. class:: right
+
+            ###Page###
+            
+            .. class:: pangaealogo
+            
+            .. image:: /home/matthew/git/bayesian_modelling/docs/source/_static/website_Logo.png
+               :align: center
+            
+            
+            .. class:: copyright
+            
+            .. include:: <isonum.txt>
+
+            Copyright |copy| 2023, Pangaea Innovations Pty. Ltd.
+            
+
+            .. class:: draft
+            
+            DRAFT
+            
+
+
+        defaultHeader: &draftHeaderCentered |
+
+            .. class:: logo
+            
+                
+            .. class:: sectiontitle
+            
+                ###Section###
+            
+            
+            .. class:: draft
+            
+            DRAFT                                                           
+            
+
+
+    mainPage: &draftTopAndBottom
+        defaultFooter: *draftFooterCentered
+        defaultHeader: *draftHeaderCentered
+        showFooter: true
+        showHeader: true
+
+    coverPage: *draftTopAndBottom
+
+    emptyPage: *draftTopAndBottom
+
+
+styles:
+    draft: {alignment: center, parent: bodytext, fontName: fontSansBold}
+    
+    copyright: {alignment: center, parent: normal, fontName: fontSans, fontSize: 8}
+    
+    sectiontitle: {alignment: center, parent: bodytext, fontName: fontSansBold}
+    

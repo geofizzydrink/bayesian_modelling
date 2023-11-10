@@ -1,0 +1,90 @@
+[
+{
+	"study_datafile": "./data/historic_control_data.json",
+	"historic_datafile": "./data/historic_control_data.json",
+	"historic_data_label": "all_historic_data", 
+	 "current_data_label": "study_data", 
+	 "datafields": ["percent_survived","total_mice_start","total_mice_end","tumours"], 
+	 "alpha_levels": [0.01, 0.025,0.5], 
+	 "k_values": [5], 
+	 "mouse_line": "All", 
+	 "mouse_gender": "both",
+	 "mouse_age_weeks": [0, 150]
+ },
+{
+	"study_datafile": "./data/current_control_data.json",
+	"historic_datafile": "./data/historic_control_data.json",
+	"historic_data_label": "FVB/N_female_historic_data", 
+	 "current_data_label": "female_study_data", 
+	 "datafields": ["percent_survived"], 
+	 "alpha_levels": [0.025,0.05], 
+	 "k_values": [3, 5, 8], 
+	 "mean_values": [67.5], 
+	 "mouse_line": "FVB/N", 
+	 "mouse_gender": "female",
+	 "mouse_age_weeks": [0, 150]
+ } ,
+{
+	"study_datafile": "./data/current_control_data.json",
+	"historic_datafile": "./data/historic_control_data.json",
+	"historic_data_label": "CD-1_female_historic_data", 
+	 "current_data_label": "female_study_data", 
+	 "datafields": ["percent_survived"], 
+	 "alpha_levels": [0.025,0.05], 
+	 "k_values": [3, 5, 8], 
+	 "mean_values": [67.5], 
+	 "mouse_line": "CD-1", 
+	 "mouse_gender": "female",
+	 "mouse_age_weeks": [0, 150]
+ } ,
+{
+	"study_datafile": "./data/current_control_data.json",
+	"historic_datafile": "./data/historic_control_data.json",
+	"historic_data_label": "CD-1_male_historic_data", 
+	 "current_data_label": "male_study_data", 
+	 "datafields": ["percent_survived"], 
+	 "alpha_levels": [0.025,0.05], 
+	 "k_values": [3, 5, 8], 
+	 "mean_values": [67.5], 
+	 "mouse_line": "CD-1", 
+	 "mouse_gender": "male",
+	 "mouse_age_weeks": [0, 150]
+ } ,
+{
+	"study_datafile": "./data/current_control_data.json",
+	"historic_datafile": "./data/historic_control_data.json",
+	"historic_data_label": "CD-1_all_historic_data", 
+	 "current_data_label": "all_study_data", 
+	 "datafields": ["percent_survived"], 
+	 "alpha_levels": [0.025,0.05], 
+	 "k_values": [3, 5, 8], 
+	 "mean_values": [67.5], 
+	 "mouse_line": "CD-1", 
+	 "mouse_gender": "both",
+	 "mouse_age_weeks": [0, 150]
+ } ,
+{
+	"study_datafile": "./data/current_control_data.json",
+	"historic_datafile": "./data/historic_control_data.json",
+	"historic_data_label": "FVB/N_male_historic_data", 
+	 "current_data_label": "male_study_data", 
+	 "datafields": ["percent_survived"], 
+	 "alpha_levels": [0.025,0.05], 
+	 "k_values": [3, 5, 8], 
+	 "mean_values": [67.5], 
+	 "mouse_line": "FVB/N", 
+	 "mouse_gender": "male",
+	 "mouse_age_weeks": [0, 150]
+ },{
+	"study_datafile": "./data/historic_control_data.json",
+	"historic_datafile": "./data/historic_control_data.json",
+	"historic_data_label": "all_historic_data", 
+	 "current_data_label": "study_data", 
+	 "datafields": ["percent_survived","total_mice_start","total_mice_end","tumours"], 
+	 "alpha_levels": [0.01, 0.025,0.5], 
+	 "k_values": [5], 
+	 "mouse_line": "All", 
+	 "mouse_gender": "both",
+	 "mouse_age_weeks": [0, 150]
+ }                 
+]
