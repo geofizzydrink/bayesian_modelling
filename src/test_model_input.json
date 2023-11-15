@@ -16,7 +16,8 @@
 	 "mouse_line": "All", 
 	 "mouse_gender": "both",
 	 "mouse_age_weeks": [0,200],
-	 "power_prior_lambda": 0.0,
+	 "power_prior_lambda": 0.5,
+	 "number_of_regressions": 1,
 	"prior_dist_type": "normal",
 	"data_x_field": "total_mice_start",
 	"data_y_field": "tumours"

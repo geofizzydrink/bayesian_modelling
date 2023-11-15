@@ -987,6 +987,33 @@ def main(input_parameters='',
                                                                 power_prior_lambda=model_run_params['power_prior_lambda'],
                                                                 multiple_historic_datasets_flag = True
                                                                  )
+                                
+                                if 'number_of_regressions' in model_run_params.keys():
+                                    if (model_run_params['power_prior_lambda'] > 0.0) and (model_run_params['number_of_regressions'] > 1):
+                                    
+                                        tmp_mu_0 = []
+                                        tmp_sigma_0 = []
+                                        tmp_num_0 = []
+                                        for a in range(model_run_params['number_of_regressions']):
+                                            tmp_posteriour_dist = find_posterior(input_data=active_control_arr,
+                                                                        historic_data=historic_control_arr,
+                                                                         prior_dist_type=model_run_params['prior_dist_type'],
+                                                                        power_prior_lambda=model_run_params['power_prior_lambda'],
+                                                                        multiple_historic_datasets_flag = True,
+                                                                        plot_data=False
+                                                                         )
+                                            tmp_mu_0.append(tmp_posteriour_dist[0])                           
+                                            tmp_sigma_0.append(tmp_posteriour_dist[1])  
+                                            tmp_num_0.append(tmp_posteriour_dist[2]) 
+                                        tmp_df = pd.DataFrame({'mu_0': tmp_mu_0,
+                                                               'sigma_0': tmp_sigma_0,
+                                                               'tmp_num_0': tmp_num_0})
+                                        print(tmp_df)
+                                        print(tmp_df.describe())
+                                        
+                                        
+                                        control_posteriour_dist = tmp_df['mu_0'].mean(), tmp_df['sigma_0'].mean(), int(tmp_df['tmp_num_0'].mean())
+                                        print('average control_posteriour_dist', control_posteriour_dist)
                             
                             else:
                                 control_posteriour_dist = find_posterior(input_data=active_control_arr,
@@ -995,15 +1022,31 @@ def main(input_parameters='',
                                                                 power_prior_lambda=model_run_params['power_prior_lambda'],
                                                                 multiple_historic_datasets_flag = False
                                                                  )
-                                
-                            if np.any(np.isnan(control_posteriour_dist)):
+                            
+                            
+                            mu_0 = control_posteriour_dist[0]                            
+                            sigma_0 = control_posteriour_dist[1]  
+                            num_samples_0 =  control_posteriour_dist[2] 
+                            control_distribution = sp_stats.norm(loc = mu_0, scale = sigma_0) 
+                            control_pdf = control_distribution.pdf(np.linspace(mu_0-10*sigma_0,mu_0+10*sigma_0,num_samples_0))
+                             
+                            if np.any(np.isnan(control_pdf)):
                                 null_control_data = True 
-                                control_posteriour_dist = get_prior(np.linspace(-1,1,len(control_posteriour_dist)), 
-                                                                    distribution_type='normal',
-                                                                    norm_mean=0.0,
-                                                                    norm_sigma=0.1)
+                                #===============================================
+                                # sigma_0 = (0.5/num_samples_0)
+                                # control_distribution = sp_stats.norm(loc = mu_0, scale = sigma_0) 
+                                # control_pdf = control_distribution.pdf(np.linspace(mu_0-10*sigma_0,mu_0+10*sigma_0,num_samples_0))
+                                #===============================================
+                             
+                                #===============================================
+                                # control_pdf = get_prior(np.linspace(-1,1,num_samples_0), 
+                                #                                     distribution_type='normal',
+                                #                                     norm_mean=mu_0,
+                                #                                     norm_sigma=(0.5/num_samples_0))
+                                #===============================================
                             else:
                                 null_control_data = False
+                                
                             '''   
                             #===================================================
                             # Compute Active Arm Posterior Probability Distribution
@@ -1024,117 +1067,330 @@ def main(input_parameters='',
                                                                 power_prior_lambda=model_run_params['power_prior_lambda'],
                                                                 multiple_historic_datasets_flag = False
                                                                  )
-                            print('test_posteriour_dist',test_posteriour_dist)
-                            print('control_posteriour_dist',control_posteriour_dist)    
-                            print('mu_1 - mu_0',compute_percentile(np.linspace(0,1,len(test_posteriour_dist)), 
-                                                        test_posteriour_dist, 
-                                                        0.5) - compute_percentile(np.linspace(0,1,len(control_posteriour_dist)), 
-                                                        control_posteriour_dist, 
-                                                        0.5))    
-                                             
+                            mu_1 = test_posteriour_dist[0]
+                            sigma_1 = test_posteriour_dist[1]
+                            num_samples_1 =  test_posteriour_dist[2] 
+                            test_distribution = sp_stats.norm(loc = mu_1, scale = sigma_1) 
+                            test_pdf = test_distribution.pdf(np.linspace(mu_1-10*sigma_1,mu_1+10*sigma_1,num_samples_1))
+                            print('num_samples_0',num_samples_0)
+                            print('num_samples_1',num_samples_1)
+                            print('sigma_0',sigma_0)
+                            print('sigma_1',sigma_1)
+                            print('mu_0',mu_0)
+                            print('mu_1',mu_1)
+                            print('mu_1 - mu_0', mu_1 - mu_0)
                             
-                            if len(test_posteriour_dist) == len(control_posteriour_dist):
-                                test_df = pd.DataFrame({'test_data': test_posteriour_dist,
-                                                        'control_data': control_posteriour_dist})
-                            else:
-                                if len(test_posteriour_dist) > len(control_posteriour_dist):
-                                    test_df = pd.DataFrame({'test_data': test_posteriour_dist})
-                                    tmp_arr = np.ones_like(test_posteriour_dist)
-                                    tmp_arr = np.where(tmp_arr==1, np.nan, tmp_arr)
-                                    for i in range(len(test_posteriour_dist)):
-                                        if i < len(control_posteriour_dist):
-                                            print(i,len(control_posteriour_dist))
-                                            print(control_posteriour_dist[i])
-                                            tmp_arr[i] = control_posteriour_dist[i] 
-                                
-                                    test_df['control_data'] = tmp_arr
-                                else:
-                                    test_df = pd.DataFrame({'control_data': control_posteriour_dist})
-                                    tmp_arr = np.ones_like(control_posteriour_dist)
-                                    tmp_arr = np.where(tmp_arr==1, np.nan, tmp_arr)
-                                    for i in range(len(control_posteriour_dist)):
-                                        if i < len(test_posteriour_dist):
-                                            tmp_arr[i] = test_posteriour_dist[i] 
-                                
-                                    test_df['test_data'] = tmp_arr
-                                    
-                                
-                            print(test_df)
-                            if len(test_posteriour_dist) != len(control_posteriour_dist):
-                                evarFlag = False 
-                            else:
-                                evarFlag = True
                             
-                            res = stat()
+                            #===================================================
+                            # plt.figure(figsize = (10, 8))
+                            #===================================================
+                            fig, ax1 = plt.subplots()
+                            ax1.plot(np.linspace(mu_1-10*sigma_1,mu_1+10*sigma_1,num_samples_1), 
+                                     test_pdf, label = 'test_posteriour_dist Distribution')   
+                            ax1.plot(np.linspace(mu_0-10*sigma_0,mu_0+10*sigma_0,num_samples_0),  
+                                     control_pdf, label = 'control_posteriour_dist Distribution')  
+                            ax1.axvline(x=mu_0, ls = '--', color = 'k', label = f'mu_0 = {mu_0}')
+                            ax1.axvline(x=mu_1, ls = '--', color = 'r', label = f'mu_1 = {mu_1}')
                             if null_control_data:
+                                ax1.axis([np.min([mu_1-3*sigma_1,
+                                                  mu_0-3*sigma_0]),
+                                          np.max([mu_1+3*sigma_1,
+                                                  mu_0+3*sigma_0]),
+                                          0,np.nanmax(test_pdf)+0.05*np.nanmax(test_pdf)])
+                            else:
+                                ax1.axis([np.min([mu_1-3*sigma_1,
+                                                  mu_0-3*sigma_0]),
+                                          np.max([mu_1+3*sigma_1,
+                                                  mu_0+3*sigma_0]),
+                                          0,np.max([np.nanmax(test_pdf)+0.05*np.nanmax(test_pdf),
+                                                   np.nanmax(control_pdf)+0.05*np.nanmax(control_pdf)])])
+                             
+                            res = stat()
+                            analysis = TTestIndPower()
+                            if null_control_data:
+                                print('-----------------------------------------------------')
+                                print('=====================================================')
+                                print('Bayesian Regression Results')
+                                print('=====================================================')
+                                print('null_control_data',null_control_data, '(i.e. insufficient variation in the data to create a proper normal distribution based on the data')
+                                
+                                test_df = pd.DataFrame({'test_data': test_distribution.rvs(size=num_samples_1, random_state=rng)})
+                                test_df['diff'] = test_df['test_data'] - 0.0
+                                
                                 res.ztest(df=test_df, 
                                          x = 'test_data', 
-                                         x_std = test_df['test_data'].std(), 
-                                         mu=0.0,
+                                         x_std = sigma_1, 
+                                         mu=mu_0,
                                          alpha = 0.05, 
                                          test_type = 1)
-                                print('res',res.summary,res.result)
-                                
-                                
+                                print('One Sided Z Score Statistics between Test Arm Distribution and the Control Arm mean')                                
+                                print(res.summary)
+                                print('Z Score = ',res.result[1],'p value = ',res.result[2])
+                                if (np.abs(res.result[1]) > 1.96) and (res.result[2] < 0.05):
+                                    print('Test Arm Distribution and Control Arm Mean is Statistically Significant')
+                                else:
+                                    print('Test Arm Distribution and Control Arm Mean is NOT Statistically Significant')
+                                    
                                 res.ztest(df=test_df, 
-                                                 x = 'test_data', 
-                                                 y = 'control_data', 
-                                                 x_std = test_df['test_data'].std(), 
-                                                 y_std = test_df['control_data'].std(), 
+                                                 x = 'diff', 
+                                                x_std = np.std(test_df['diff'].values), 
+                                                mu=0.0,
                                                  alpha = 0.05, 
-                                                 test_type = 2)
-                                print('res',res.summary,res.result)
-                                p_value = res.result[4]
-                                                            
-                                   
-                            else:
-                                res.ztest(df=test_df, 
-                                                 x = 'test_data', 
-                                                 y = 'control_data', 
-                                                 x_std = test_df['test_data'].std(), 
-                                                 y_std = test_df['control_data'].std(), 
-                                                 alpha = 0.025, 
-                                                 test_type = 2)
-                                print('res',res.summary,res.result)
-                                p_value = res.result[4]
-                            
-                                                 
-                            cohens_d = (test_df['test_data'].mean() - 0.0) / (np.sqrt((test_df['test_data'].std() ** 2 + 0.0 ** 2) / 2))
-                            print('cohens_d',cohens_d)
-                            analysis = TTestIndPower()
-                            power = analysis.solve_power(cohens_d, power=None, nobs1=len(test_posteriour_dist), ratio=len(control_posteriour_dist)/len(test_posteriour_dist), alpha=0.05)
-                            print('power: %.3f' % power)
+                                                 test_type = 1)
+                                print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:μ1 - μ0 = 0 (i.e. H0:μ1 = μ0)')
+                                print(res.summary)
+                                print('Z Score = ',res.result[1],'p value = ',res.result[2])
+                                if (np.abs(res.result[1]) > 1.96) and (res.result[2] < 0.05):
+                                    print('Difference between Test Arm and Control Arm is Statistically Significant')
+                                else:
+                                    print('Difference between Test Arm and Control Arm is NOT Statistically Significant')
+                                cohens_d = (mu_1 - mu_0) / (np.sqrt((sigma_1 ** 2 + sigma_0 ** 2) / 2))                                
+                                power = analysis.solve_power(cohens_d, power=None, nobs1=num_samples_1, ratio=num_samples_0/num_samples_1, alpha=0.05)
+                                print('Statistical Power: %.3f' % power)    
                                 
-                       #========================================================
-                       #      mu = np.linspace(np.min(test_arr), np.max(test_arr), num = len(test_arr))
-                       #      std_lower = compute_percentile(mu, 
-                       #                                   posteriour_dist, 
-                       #                                   0.5-0.341)
-                       #      std_upper = compute_percentile(mu, 
-                       #                                   posteriour_dist, 
-                       #                                   0.5+0.341)
-                       #      print('posteriour_dist',posteriour_dist,compute_percentile(mu, 
-                       #                                                   posteriour_dist, 
-                       #                                                   0.5),std_lower,std_upper, (std_upper -std_lower)/2)
-                       #      print(np.sqrt(np.mean((posteriour_dist - compute_percentile(mu, 
-                       #                                                   posteriour_dist, 
-                       #                                                   0.5))**2)))
-                       #      print((std_upper -std_lower)/2)
-                       #      print(np.std(test_arr))
-                       #      model = sp_stats.norm(loc=compute_percentile(mu, 
-                       #                                                   posteriour_dist, 
-                       #                                                   0.5),
-                       #                          scale=0.1)#(std_upper -std_lower)/2)
-                       #                          #===============================
-                       #                          # scale=1)
-                       #                          #===============================
-                       # 
-                       #      results = model.rvs(size=[100,100])
-                       #      result_sum = (results > 1.75).sum(axis=1)
-                       #      plt.figure(figsize = (10, 8))
-                       #      plt.hist(result_sum, edgecolor = 'black', color = 'cornflowerblue')
-                       #      plt.show()
-                       #========================================================
+                                print('\n\n+++++++++++++++++++++++++++++++++++++++++++++++++++')
+                                print('Assuming a proxy Standard Deviation for the NULL Control Arm based on a sampling uncertanty of 0.5 (i.e. std = sqrt((0.5 - μ0)^2) = 1.58113883×10⁻¹')
+                                sigma_0 = np.sqrt(0.5**2)
+                                control_distribution = sp_stats.norm(loc=mu_0, scale=sigma_0)
+                                
+                                if num_samples_0 == num_samples_1:
+                                    test_df['control_data'] = control_distribution.rvs(size=num_samples_0, random_state=rng)
+                                
+                                else:
+                                    if num_samples_0 > num_samples_1:
+                                        '''
+                                        #=======================================
+                                        # number of samples in control arm is greater than in the test arm
+                                        #=======================================
+                                        '''
+                                        test_df = pd.DataFrame({'control_data': control_distribution.rvs(size=num_samples_0, random_state=rng)})
+                                        rvs_test = test_distribution.rvs(size=num_samples_1, random_state=rng)
+                                        tmp_arr = np.ones(num_samples_0)
+                                        tmp_arr = np.where(tmp_arr==1, np.nan, tmp_arr)
+                                        for i in range(num_samples_0):
+                                            if i < num_samples_1:
+                                                tmp_arr[i] = rvs_test[i] 
+                                      
+                                        test_df['test_data'] = tmp_arr
+                                    else:
+                                        '''
+                                        #=======================================
+                                        # number of samples in test arm is greater than in the control arm
+                                        #=======================================
+                                        '''
+                                        rvs_control = control_distribution.rvs(size=num_samples_0, random_state=rng)
+                                        tmp_arr = np.ones(num_samples_1)
+                                        tmp_arr = np.where(tmp_arr==1, np.nan, tmp_arr)
+                                        for i in range(num_samples_1):
+                                            if i < num_samples_0:
+                                                tmp_arr[i] = rvs_control[i] 
+                                      
+                                        test_df['control_data'] = tmp_arr
+                                
+                                test_df['diff'] = test_df['test_data'] - test_df['control_data']  
+                                
+                                res.ztest(df=test_df, 
+                                         x = 'test_data', 
+                                         y = 'control_data', 
+                                        x_std = sigma_1, 
+                                        y_std = sigma_0, 
+                                         alpha = 0.05, 
+                                         test_type = 2)
+                                print('res',res.summary)
+                                print('Two Sided Z Score Statistics between Test Arm Distribution and the Control Arm Distribution')                                
+                                print(res.summary,res.result)
+                                print('Z Score = ',res.result[2],'p value = ',res.result[4])
+                                if (np.abs(res.result[2]) > 1.96) and (res.result[4] < 0.05):
+                                    print('Test Arm Distribution and Control Arm Distribution is Statistically Significant')
+                                else:
+                                    print('Test Arm Distribution and Control Arm Distribution is NOT Statistically Significant')
+                                  
+                                res.ztest(df=test_df, 
+                                                 x = 'diff', 
+                                                x_std = np.nanstd(test_df['diff'].values), 
+                                                mu=0.0,
+                                                 alpha = 0.05, 
+                                                 test_type = 1)
+                                print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:μ1 - μ0 = 0 (i.e. H0:μ1 = μ0)')
+                                print(res.summary)
+                                print('Z Score = ',res.result[1],'p value = ',res.result[3])
+                                if (np.abs(res.result[1]) > 1.96) and (res.result[3] < 0.05):
+                                    print('Difference between Test Arm and Control Arm is Statistically Significant')
+                                else:
+                                    print('Difference between Test Arm and Control Arm is NOT Statistically Significant')
+                                cohens_d = (mu_1 - mu_0) / (np.sqrt((sigma_1 ** 2 + sigma_0 ** 2) / 2))                                
+                                power = analysis.solve_power(cohens_d, power=None, nobs1=num_samples_1, ratio=num_samples_0/num_samples_1, alpha=0.05)
+                                print('Statistical Power: %.3f' % power)    
+                                
+                                
+                                    
+                                print('+++++++++++++++++++++++++++++++++++++++++++++++++++\n\n')
+                                
+                                #===============================================
+                                # print('*************************************************')
+                                # print('Assuming a Standard Deviation of 1.0 (NB: This is not correct, but necessary to reproduce the results published by Kadariya et al. 2016)')
+                                # 
+                                # res.ztest(df=test_df, 
+                                #          x = 'test_data', 
+                                #          x_std = 1.0, 
+                                #          mu=mu_0,
+                                #          alpha = 0.05, 
+                                #          test_type = 1)
+                                # print('One Sided Z Score Statistics between Test Arm Distribution and the Control Arm mean')                                
+                                # print(res.summary,res.result)
+                                # print('Z Score = ',res.result[1],'p value = ',res.result[2])
+                                # if (np.abs(res.result[1]) > 1.96) and (res.result[2] < 0.05):
+                                #     print('Test Arm Distribution and Control Arm Mean is Statistically Significant')
+                                # else:
+                                #     print('Test Arm Distribution and Control Arm Mean is NOT Statistically Significant')
+                                #     
+                                # res.ztest(df=test_df, 
+                                #                  x = 'diff', 
+                                #                 x_std = 1.0, 
+                                #                 mu=0.0,
+                                #                  alpha = 0.05, 
+                                #                  test_type = 1)
+                                # print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:μ1 - μ0 = 0 (i.e. H0:μ1 = μ0)')
+                                # print(res.summary,res.result)
+                                # print('Z Score = ',res.result[1],'p value = ',res.result[2])
+                                # if (np.abs(res.result[1]) > 1.96) and (res.result[2] < 0.05):
+                                #     print('Difference between Test Arm and Control Arm is Statistically Significant')
+                                # else:
+                                #     print('Difference between Test Arm and Control Arm is NOT Statistically Significant')
+                                # cohens_d = (mu_1 - mu_0) / (np.sqrt((1.0 ** 2 + 1.0 ** 2) / 2))                                
+                                # power = analysis.solve_power(cohens_d, power=None, nobs1=num_samples_1, ratio=num_samples_0/num_samples_1, alpha=0.05)
+                                # print('Statistical Power: %.3f' % power)    
+                                # 
+                                # print('*************************************************')
+                                #===============================================
+                                print('=====================================================')
+                                
+                                
+                                
+                            else:  
+                                print('-----------------------------------------------------')
+                                print('=====================================================')
+                                print('Bayesian Regression Results')
+                                print('=====================================================')  
+                                if num_samples_0 == num_samples_1:
+                                    test_df = pd.DataFrame({'test_data': test_distribution.rvs(size=num_samples_1, random_state=rng),
+                                                            'control_data': control_distribution.rvs(size=num_samples_0, random_state=rng)})
+                                
+                                else:
+                                    if num_samples_0 > num_samples_1:
+                                        '''
+                                        #=======================================
+                                        # number of samples in control arm is greater than in the test arm
+                                        #=======================================
+                                        '''
+                                        test_df = pd.DataFrame({'control_data': control_distribution.rvs(size=num_samples_0, random_state=rng)})
+                                        rvs_test = test_distribution.rvs(size=num_samples_1, random_state=rng)
+                                        tmp_arr = np.ones(num_samples_0)
+                                        tmp_arr = np.where(tmp_arr==1, np.nan, tmp_arr)
+                                        for i in range(num_samples_0):
+                                            if i < num_samples_1:
+                                                tmp_arr[i] = rvs_test[i] 
+                                      
+                                        test_df['test_data'] = tmp_arr
+                                    else:
+                                        '''
+                                        #=======================================
+                                        # number of samples in test arm is greater than in the control arm
+                                        #=======================================
+                                        '''
+                                        test_df = pd.DataFrame({'test_data': test_distribution.rvs(size=num_samples_1, random_state=rng)})
+                                        rvs_control = control_distribution.rvs(size=num_samples_0, random_state=rng)
+                                        tmp_arr = np.ones(num_samples_1)
+                                        tmp_arr = np.where(tmp_arr==1, np.nan, tmp_arr)
+                                        for i in range(num_samples_1):
+                                            if i < num_samples_0:
+                                                tmp_arr[i] = rvs_control[i] 
+                                      
+                                        test_df['control_data'] = tmp_arr
+                                
+                                test_df['diff'] = test_df['test_data'] - test_df['control_data']  
+                                
+                                
+                                res.ztest(df=test_df, 
+                                         x = 'test_data', 
+                                         y = 'control_data', 
+                                        x_std = sigma_1, 
+                                        y_std = sigma_0, 
+                                         alpha = 0.05, 
+                                         test_type = 2)
+                                print('Two Sided Z Score Statistics between Test Arm Distribution and the Control Arm Distribution')                                
+                                print(res.summary)
+                                print('Z Score = ',res.result[2],'p value = ',res.result[4])
+                                if (np.abs(res.result[2]) > 1.96) and (res.result[4] < 0.05):
+                                    print('Test Arm Distribution and Control Arm Distribution is Statistically Significant')
+                                else:
+                                    print('Test Arm Distribution and Control Arm Distribution is NOT Statistically Significant')
+                                    
+                                res.ztest(df=test_df, 
+                                                 x = 'diff', 
+                                                x_std = np.nanstd(test_df['diff'].values), 
+                                                mu=0.0,
+                                                 alpha = 0.05, 
+                                                 test_type = 1)
+                                print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:μ1 - μ0 = 0 (i.e. H0:μ1 = μ0)')
+                                print(res.summary)
+                                print('Z Score = ',res.result[1],'p value = ',res.result[2])
+                                if (np.abs(res.result[1]) > 1.96) and (res.result[2] < 0.05):
+                                    print('Difference between Test Arm and Control Arm is Statistically Significant')
+                                else:
+                                    print('Difference between Test Arm and Control Arm is NOT Statistically Significant')
+                                cohens_d = (mu_1 - mu_0) / (np.sqrt((sigma_1 ** 2 + sigma_0 ** 2) / 2))                                
+                                power = analysis.solve_power(cohens_d, power=None, nobs1=num_samples_1, ratio=num_samples_0/num_samples_1, alpha=0.05)
+                                print('Statistical Power: %.3f' % power)    
+                                
+                                
+                                #===============================================
+                                # res.ztest(df=test_df, 
+                                #                  x = 'diff', 
+                                #                 x_std = np.std(test_df['diff'].values), 
+                                #                 mu=0.0,
+                                #                  alpha = 0.05, 
+                                #                  test_type = 1)
+                                # print('diff res',res.summary,res.result)
+                                # res.ztest(df=test_df, 
+                                #                  x = 'test_data', 
+                                #                  y = 'control_data', 
+                                #                 x_std = sigma_1, 
+                                #                 y_std = sigma_0, 
+                                #                  alpha = 0.05, 
+                                #                  test_type = 2)
+                                # print('res',res.summary,res.result)
+                                # test2_df = pd.DataFrame({'test_data': test_distribution.rvs(size=1000, random_state=rng),
+                                #                         'data_type': 'test_arm'})
+                                # test2_df = pd.concat([test2_df, pd.DataFrame({'test_data': control_distribution.rvs(size=1000, random_state=rng),
+                                #                                             'data_type': 'control_arm'})])
+                                # if sigma_0 != sigma_1:
+                                #     evarFlag = False 
+                                # else:
+                                #     evarFlag = True
+                                # res.ttest(df=test2_df, 
+                                #                  xfac='data_type', 
+                                #                  res='test_data', 
+                                #                 evar=evarFlag, 
+                                #                  alpha=0.05, 
+                                #                  test_type=2)
+                                # print('res',res.summary,res.result)
+                                # sp_ttest1b = sp_stats.ttest_ind(test_df['test_data'].values, test_df['control_data'].values, 
+                                #                             alternative='two-sided',
+                                #                             equal_var=False)
+                                # sp_ttest3 = sp_stats.ttest_1samp(test_df['diff'], 
+                                #                              popmean=0.0, 
+                                #                              alternative='two-sided')
+                                # print('sp_ttest3',sp_ttest3)
+                                # print('sp_ttest1b',sp_ttest1b)
+                                #===============================================
+                            
+                            
+                                print('=====================================================')  
+
+                            
+                            ax1.legend()    
+                            
                       
         plt.show()          
     except Exception as e:
@@ -1458,39 +1714,110 @@ def compute_percentile(parameter_values, distribution_values, percentile):
     
 
 def find_posterior(
-        #=======================================================================
-        # min_x, max_x, num_x_samples, input_data, 
-        #=======================================================================
                    input_data,
                    prior_dist_type='uniform',
                    historic_data=[],
                    power_prior_lambda=0.0,
-                   multiple_historic_datasets_flag=False):
+                   multiple_historic_datasets_flag=False,
+                   plot_data=True):
     '''
+    .. note:: 
     
-       P(θ|Data) = (P(Data|θ)∗P(θ)) / P(Data)
-       
-       the posterior mean is
-
-            μ_n = ((n_0/σ_0^2)*x_0 + (λ*n_h/σ_h^2)*x_h ) / (n_0/σ_0^2 + λ*n_h/σ_h^2)
+        **Function Details**
+        
+        Function to compute the Posterior Distribution for the following scenarios:
+        
+        1) Standard Posterior Distribution Computation (i.e. Current Study Data only);
+        2) Power Prior Posterior Distribution Computation for a single historic dataset; and,
+        3) Power Prior Posterior Distribution Computation for multiple historic datasets.
+        
+        
+        The standard Posterior Relation is: 
+        
+        
+        P(θ|Data) ∝ L(θ|Data) * P(θ)
+        
+        
+        Where:
+            P(θ|Data) = The Posterior Distribution θ, factoring in the data from the current study
             
-        and posterior variance is
-            σ_n^2 = 1 / (n_0/σ_0^2 + λ*n_h/σ_h^2)
+            L(θ|Data) = Likelihood Function of the Data for the Current Study = P(Data|θ) / P(Data)
+            
+            P(θ) = The initial Prior Distribution Function
+            
+            
+            
+        When including the influence of the Power Prior factor (λ) to include historical data this becomes:
+        
+        
+    
+        P(θ|Data, Data0, λ) ∝ L(θ|Data) * (L(θ|Data0)^λ * P(θ)).
+        
+        
+        Where:  
+            P(θ|Data, Data0, λ) = The Posterior Distribution θ, factoring in both the current and historical data and the Power Prior Factor.
+            
+            L(θ|Data) = Likelihood Function of the Data for the Current Study = P(Data|θ) / P(Data)
+            
+            L(θ|Data0) = Likelihood Function for the Data of a Historic Study = P(Data0|θ) / P(Data0)
+            
+            P(θ) = The initial Prior Distribution Function
+            
+            λ = Power Prior Factor
+          
+          
+          
+        For multiple historical datasets the above relation becomes:
+                      
+        P(θ|Data, Data0, λ) ∝ L(θ|Data) *  ∏ (L(θ|Data0)^λ * P(θ))
+                                            
+        Where: 
+            ∏ = the "Prod" function from k=1 to k=k0 ("Prod" is the multiplication version of "Sum")
+            
+            k0 = the number of historical datasets
 
     
+    Parameters
+    ----------
+    
+    input_data: Array-like, required        
+        An array of input data values representing the "Current Study" dataset            
+    
+    historic_data: Array-like, optional, default=[]
+        An array of input data values representing the "Historic Study" dataset. If the historic data object
+        represents multiple historical datasets this must be a 2-dimensional array.
+        
+    prior_dist_type: str, optional, default='uniform'
+        Prior Distribution Type - either "uniform" or "normal"
+    
+    power_prior_lambda: number, optional, default=0.0
+        Power Prior Parameter to use in the computation. Must be between 0 and 1.
+    
+    multiple_historic_datasets_flag: Boolean, optional, default=False
+        Flag to perform the computation for multiple historic datasets.    
+    
+    plot_data: Boolean, optional, default=True
+        Flag to plot the data for the Bayesian Regression.    
+    
+        
+    Returns
+    -------
+    
+    output: tuple
+        A tuple object including the "posterior mean", "posterior standard deviation", and the number of historical data samples borrowed 
+       
+        
     '''
     
-    print('input_data',input_data)
-    
-    
-    mosaic = [["prior", "posterior_models"],
-              ["regression", "final_model"]]
-    
-    fig, axes = plt.subplot_mosaic(
-        mosaic,
-    )
-    fig.suptitle("Bayesian Posterior Distribution Regression", fontsize=16)
-    fig.set_layout_engine('constrained')
+    if plot_data:
+        mosaic = [["prior", "posterior_models"],
+                  ["regression", "final_model"]]
+        
+        fig, axes = plt.subplot_mosaic(
+            mosaic,
+        )
+        fig.suptitle("Bayesian Posterior Distribution Regression", fontsize=16)
+        fig.set_layout_engine('constrained')
     
     if (np.min(input_data) == 0.0) and (np.max(input_data) == 0.0):
         mu = np.linspace(0, 1, num = len(input_data))
@@ -1562,13 +1889,13 @@ def find_posterior(
                     #===================================================================
                     # for the case of a binary flagged dataset with values of 0's and 1's where the 
                     # observed standard deviation is 0.0, we will assume a 
-                    # nominal standard deviation of 0.5 - which is half of the sampling interval
+                    # nominal standard deviation of sqrt(0.5^2) - which is the standard deviation of the sampling uncertainty (i.e. half of the sampling interval)
                     #===================================================================
                     '''
                     historic_prior = get_prior(historic_mu, 
                                       distribution_type=prior_dist_type, 
                                       norm_mean=np.mean(historic_dataset), 
-                                      norm_sigma=0.5)
+                                      norm_sigma=np.sqrt(0.5**2))
                 
                 else:
                     historic_prior = get_prior(historic_mu, 
@@ -1582,67 +1909,65 @@ def find_posterior(
                 historic_likelihood_dict[h_ind] = historic_likelihood                
                 unnormalized_posterior = historic_likelihood * historic_prior
                 p_data = get_P_data(unnormalized_posterior, historic_mu)
-                normalized_posterior = unnormalized_posterior/p_data
+                if p_data == 0.0:
+                    normalized_posterior = unnormalized_posterior*p_data
+                else:
+                    normalized_posterior = unnormalized_posterior/p_data
                 historic_prior = normalized_posterior
                 historic_likelihood_dict[h_ind] = normalized_posterior
                 
-                #===============================================================
-                # if h_ind%(len(input_data)//10) == 0:
-                #     axes['posterior_models'].plot(historic_mu, normalized_posterior, label = f'Model after observing {h_ind} samples')
-                #===============================================================
-            num_samples_to_borrow = np.int(power_prior_lambda*len(historic_dataset))
+            num_samples_to_borrow = int(power_prior_lambda*len(historic_dataset))
             borrowed_data = np.random.choice(historic_dataset, size=num_samples_to_borrow, replace=False)
             historic_data_borrowed.append(borrowed_data)
             
             
-            if len(historic_dataset) > 0:    
-                axes['posterior_models'].plot(historic_mu, 
-                         historic_likelihood_dict[len(historic_dataset)-1], 
-                         color = 'r',
-                         linestyle='dashed',
-                         linewidth=2,
-                         label = f'Power Prior Model final  - '+str(data_id))
+            if len(historic_dataset) > 0:   
+                if plot_data: 
+                    axes['posterior_models'].plot(historic_mu, 
+                             historic_likelihood_dict[len(historic_dataset)-1], 
+                             color = 'r',
+                             linestyle='dashed',
+                             linewidth=2,
+                             label = f'Power Prior Model final  - '+str(data_id))
             
-            
-                print('posterior_mean',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_dataset)-1], 0.5))
-                print('posterior_std',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_dataset)-1], 0.5-0.341),compute_percentile(historic_mu, historic_likelihood_dict[len(historic_dataset)-1], 0.5+0.341))
-                print('posterior_99.5',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_dataset)-1], 0.995))
-                print('posterior_0.5',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_dataset)-1], 0.005))
-                
-                print('first model posterior_mean',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.5))
-                print('first model posterior_std',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.5-0.341),compute_percentile(historic_mu, historic_likelihood_dict[0], 0.5+0.341))
-                print('first model posterior_99.5',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.995))
-                print('first model posterior_0.5',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.005))
-                
+            #===================================================================
+            # 
+            #     print('posterior_mean',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_dataset)-1], 0.5))
+            #     print('posterior_std',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_dataset)-1], 0.5-0.341),compute_percentile(historic_mu, historic_likelihood_dict[len(historic_dataset)-1], 0.5+0.341))
+            #     print('posterior_99.5',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_dataset)-1], 0.995))
+            #     print('posterior_0.5',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_dataset)-1], 0.005))
+            #     
+            #     print('first model posterior_mean',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.5))
+            #     print('first model posterior_std',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.5-0.341),compute_percentile(historic_mu, historic_likelihood_dict[0], 0.5+0.341))
+            #     print('first model posterior_99.5',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.995))
+            #     print('first model posterior_0.5',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.005))
+            #     
+            #===================================================================
                 historic_mean = compute_percentile(historic_mu, historic_likelihood_dict[len(historic_dataset)-1], 0.5)
                 historic_std = (compute_percentile(historic_mu, historic_likelihood_dict[len(historic_dataset)-1], 0.5+0.341) - compute_percentile(historic_mu, historic_likelihood_dict[len(historic_dataset)-1], 0.5-0.341))/2
-                print('historic_mean',historic_mean,'historic_std',historic_std)
+                #===============================================================
+                # print('historic_mean',historic_mean,'historic_std',historic_std)
+                #===============================================================
                 
                 power_prior =  get_prior(mu, 
                                       distribution_type=prior_dist_type, 
                                       norm_mean=historic_mean, 
                                       norm_sigma=historic_std)
-                if np.any(np.isnan(power_prior)):
-                    print('bla')
-                else:
+                if not np.any(np.isnan(power_prior)):
                     historic_priors.append(power_prior)
-                axes['prior'].plot(mu, power_prior, label = 'power_prior Distribution - '+str(data_id))
+                if plot_data:
+                    axes['prior'].plot(mu, power_prior, label = 'power_prior Distribution - '+str(data_id))
             data_id += 1
         power_prior = np.prod(historic_priors, axis=0)
-        print('historic_priors',historic_priors)
-        print(power_prior)
         print('historic_data_borrowed',historic_data_borrowed)
-        axes['prior'].plot(mu, power_prior, label = 'Master power_prior Distribution')
+        if plot_data:
+            axes['prior'].plot(mu, power_prior, label = 'Master power_prior Distribution')
     else:
         historic_likelihood_dict = {}
         if len(historic_data)>0:
             historic_mu = np.linspace(np.min(historic_data), np.max(historic_data), num = len(historic_data))
         else:
             historic_mu = np.array([])
-        
-        #=======================================================================
-        # historic_prior = get_prior(historic_mu)
-        #=======================================================================
         
         if prior_dist_type == 'uniform':
             historic_prior = get_prior(historic_mu)
@@ -1658,13 +1983,18 @@ def find_posterior(
                 historic_prior = get_prior(historic_mu, 
                                   distribution_type=prior_dist_type, 
                                   norm_mean=np.mean(historic_data), 
-                                  norm_sigma=0.5)
+                                  norm_sigma=np.sqrt(0.5**2))
             
             else:
                 historic_prior = get_prior(historic_mu, 
                                   distribution_type=prior_dist_type, 
                                   norm_mean=np.mean(historic_data), 
                                   norm_sigma=np.std(historic_data))
+                
+            historic_prior = get_prior(historic_mu, 
+                              distribution_type=prior_dist_type, 
+                              norm_mean=np.mean(historic_data), 
+                              norm_sigma=np.std(historic_data))
             
         
         for h_ind, h_datum in enumerate(historic_data):
@@ -1676,31 +2006,35 @@ def find_posterior(
             historic_prior = normalized_posterior
             historic_likelihood_dict[h_ind] = normalized_posterior
             
-            if h_ind%(len(input_data)//10) == 0:
-                axes['posterior_models'].plot(historic_mu, normalized_posterior, label = f'Model after observing {h_ind} samples')
+            if plot_data:
+                if h_ind%(len(input_data)//10) == 0:
+                    axes['posterior_models'].plot(historic_mu, normalized_posterior, label = f'Model after observing {h_ind} samples')
                 
-            num_samples_to_borrow = np.int(power_prior_lambda*len(historic_data))
+            num_samples_to_borrow = int(power_prior_lambda*len(historic_data))
             borrowed_data = np.random.choice(historic_data, size=num_samples_to_borrow, replace=False)
             historic_data_borrowed.append(borrowed_data)
             
-        if len(historic_data) > 0:    
-            axes['posterior_models'].plot(historic_mu, 
-                     historic_likelihood_dict[len(historic_data)-1], 
-                     color = 'r',
-                     linestyle='dashed',
-                     linewidth=2,
-                     label = f'Power Prior Model final')
+        if len(historic_data) > 0:   
+            if plot_data: 
+                axes['posterior_models'].plot(historic_mu, 
+                         historic_likelihood_dict[len(historic_data)-1], 
+                         color = 'r',
+                         linestyle='dashed',
+                         linewidth=2,
+                         label = f'Power Prior Model final')
         
         
-            print('posterior_mean',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_data)-1], 0.5))
-            print('posterior_std',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_data)-1], 0.5-0.341),compute_percentile(historic_mu, historic_likelihood_dict[len(historic_data)-1], 0.5+0.341))
-            print('posterior_99.5',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_data)-1], 0.995))
-            print('posterior_0.5',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_data)-1], 0.005))
-            
-            print('first model posterior_mean',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.5))
-            print('first model posterior_std',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.5-0.341),compute_percentile(historic_mu, historic_likelihood_dict[0], 0.5+0.341))
-            print('first model posterior_99.5',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.995))
-            print('first model posterior_0.5',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.005))
+            #===================================================================
+            # print('posterior_mean',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_data)-1], 0.5))
+            # print('posterior_std',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_data)-1], 0.5-0.341),compute_percentile(historic_mu, historic_likelihood_dict[len(historic_data)-1], 0.5+0.341))
+            # print('posterior_99.5',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_data)-1], 0.995))
+            # print('posterior_0.5',compute_percentile(historic_mu, historic_likelihood_dict[len(historic_data)-1], 0.005))
+            # 
+            # print('first model posterior_mean',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.5))
+            # print('first model posterior_std',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.5-0.341),compute_percentile(historic_mu, historic_likelihood_dict[0], 0.5+0.341))
+            # print('first model posterior_99.5',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.995))
+            # print('first model posterior_0.5',compute_percentile(historic_mu, historic_likelihood_dict[0], 0.005))
+            #===================================================================
             historic_mean = compute_percentile(historic_mu, historic_likelihood_dict[len(historic_data)-1], 0.5)
             historic_std = (compute_percentile(historic_mu, historic_likelihood_dict[len(historic_data)-1], 0.5+0.341) - compute_percentile(historic_mu, historic_likelihood_dict[len(historic_data)-1], 0.5-0.341))/2
             print('historic_mean',historic_mean,'historic_std',historic_std)
@@ -1710,29 +2044,9 @@ def find_posterior(
                                   norm_mean=historic_mean, 
                                   norm_sigma=historic_std)
             
-        
-            axes['prior'].plot(historic_mu, power_prior, label = 'power_prior Distribution')
+            if plot_data:
+                axes['prior'].plot(historic_mu, power_prior, label = 'power_prior Distribution')
             
-    #===========================================================================
-    # axes['prior'].plot(mu, prior, label = 'prior Distribution')
-    # axes['prior'].axvline(x=compute_percentile(mu, prior, 0.5), ls = '--', color = 'k', label = 'Prior Mean')
-    #===========================================================================
-    
-    #===========================================================================
-    # axes['prior'].axvline(x = compute_percentile(mu, prior, 0.5-0.341), ls = '--', color = 'g', label = 'Standard Deviation')
-    # axes['prior'].axvline(x = compute_percentile(mu, prior, 0.5+0.341), ls = '--', color = 'g')
-    #===========================================================================
-    #===========================================================================
-    #     
-    # axes['prior'].legend()      
-    # axes['prior'].set_title('Bayesian Prior Model')
-    # axes['prior'].set_xlabel("Prior Data Values")
-    # axes['prior'].set_ylabel("Prior Probability Density")
-    # axes['prior'].set_yscale("log")
-    # 
-    # 
-    #===========================================================================
-    
     posterior_dict = {}    
     for ind, datum in enumerate(input_data):
         likelihood = get_likelihood(datum, mu, np.std(mu))
@@ -1741,22 +2055,23 @@ def find_posterior(
         normalized_posterior = unnormalized_posterior/p_data
         prior = normalized_posterior
         posterior_dict[ind] = normalized_posterior
-       
-        if ind%(len(input_data)//5) == 0:
-            axes['posterior_models'].plot(mu, normalized_posterior, label = f'Baseline Model after observing {ind} samples')
         
-    axes['posterior_models'].plot(mu, 
-             posterior_dict[len(input_data)-1], 
-             color = 'k',
-             linestyle='dashed',
-             linewidth=2,
-             label = f'Baseline Model final')
+        if plot_data:
+            if ind%(len(input_data)//5) == 0:
+                axes['posterior_models'].plot(mu, normalized_posterior, label = f'Baseline Model after observing {ind} samples')
+    if plot_data:    
+        axes['posterior_models'].plot(mu, 
+                 posterior_dict[len(input_data)-1], 
+                 color = 'k',
+                 linestyle='dashed',
+                 linewidth=2,
+                 label = f'Baseline Model final')
     
     
-    axes['posterior_models'].legend()
-    axes['posterior_models'].set_title('Bayesian Posterior Models')
-    axes['posterior_models'].set_xlabel("Modelled Data Values")
-    axes['posterior_models'].set_ylabel("Modelled Probability Density")
+        axes['posterior_models'].legend()
+        axes['posterior_models'].set_title('Bayesian Posterior Models')
+        axes['posterior_models'].set_xlabel("Modelled Data Values")
+        axes['posterior_models'].set_ylabel("Modelled Probability Density")
      
 #===============================================================================
 #     print('mu',mu)
@@ -1780,28 +2095,10 @@ def find_posterior(
 #     print('test_arr_std',np.std(input_data))
 #     print('test_arr_var',np.var(input_data))
 #===============================================================================
-    
-    #===========================================================================
-    # mu_n = ((len(mu)/np.var(mu))*input_data[-1] + (power_prior*(len(historic_mu)/np.var(historic_mu))*historic_data[-1])) / (len(mu)/np.var(mu) + power_prior*(len(historic_mu)/np.var(historic_mu)))
-    # 
-    # var_n = 1 / (len(mu)/np.var(mu) + power_prior*(len(historic_mu)/np.var(historic_mu)))
-    # 
-    # print('mu_n',mu_n)
-    # print('var_n',var_n)
-    # 
-    # mu_n = ((len(mu)/np.var(mu))*input_data[-1] + (0*(len(historic_mu)/np.var(historic_mu))*historic_data[-1])) / (len(mu)/np.var(mu) + 0*(len(historic_mu)/np.var(historic_mu)))
-    # 
-    # var_n = 1 / (len(mu)/np.var(mu) + 0*(len(historic_mu)/np.var(historic_mu)))
-    # 
-    # print('mu_n1',mu_n)
-    # print('var_n1',var_n)
-    #===========================================================================
-    
+
     if len(historic_data_borrowed) > 0:
         master_borrowed_data = np.hstack(historic_data_borrowed)
-        print('master_borrowed_data',master_borrowed_data)
         borrowed_input_data = np.hstack([master_borrowed_data,input_data])
-        print('borrowed_input_data',borrowed_input_data)
     else:
         borrowed_input_data = input_data
     
@@ -1812,10 +2109,7 @@ def find_posterior(
         borrowed_mu = np.linspace(np.min(borrowed_input_data), np.max(borrowed_input_data), num = len(borrowed_input_data))
     else:
         borrowed_mu = np.array([])
-    
-    print('borrowed_mu',borrowed_mu)
-    
-    
+   
     if prior_dist_type == 'uniform':
         borrowed_prior = get_prior(borrowed_mu)
     elif prior_dist_type == 'normal':
@@ -1824,13 +2118,13 @@ def find_posterior(
             #===================================================================
             # for the case of a binary flagged dataset with values of 0's and 1's where the 
             # observed standard deviation is 0.0, we will assume a 
-            # nominal standard deviation of 0.5 - which is half of the sampling interval
+            # nominal standard deviation of np.sqrt(0.5**2) - which is half of the sampling interval
             #===================================================================
             '''
             borrowed_prior = get_prior(borrowed_mu, 
                               distribution_type=prior_dist_type, 
                               norm_mean=np.mean(borrowed_input_data), 
-                              norm_sigma=0.5)
+                              norm_sigma=np.sqrt(0.5**2))
          
         else:
             borrowed_prior = get_prior(borrowed_mu, 
@@ -1842,14 +2136,15 @@ def find_posterior(
                           distribution_type=prior_dist_type, 
                           norm_mean=np.mean(borrowed_input_data), 
                           norm_sigma=np.std(borrowed_input_data))
-   
-    axes['prior'].plot(mu, power_prior, label = 'power_prior Distribution')
-            
-    axes['prior'].legend()      
-    axes['prior'].set_title('Bayesian Prior Model')
-    axes['prior'].set_xlabel("Prior Data Values")
-    axes['prior'].set_ylabel("Prior Probability Density")
-    axes['prior'].set_yscale("log")
+    
+    if plot_data:
+        axes['prior'].plot(mu, power_prior, label = 'power_prior Distribution')
+                
+        axes['prior'].legend()      
+        axes['prior'].set_title('Bayesian Prior Model')
+        axes['prior'].set_xlabel("Prior Data Values")
+        axes['prior'].set_ylabel("Prior Probability Density")
+        axes['prior'].set_yscale("log")
     
     #===========================================================================
     # borrowed_prior = power_prior
@@ -1863,81 +2158,62 @@ def find_posterior(
         normalized_posterior = unnormalized_posterior/p_data
         borrowed_prior = normalized_posterior
         prior_posterior_dict[ind] = normalized_posterior
-        if ind%(len(borrowed_input_data)//5) == 0:
-            axes['posterior_models'].plot(borrowed_mu, normalized_posterior, label = f'Main Model after observing {ind} samples')
+        if plot_data:
+            if ind%(len(borrowed_input_data)//5) == 0:
+                axes['posterior_models'].plot(borrowed_mu, normalized_posterior, label = f'Main Model after observing {ind} samples')
             
     
-     
-    axes['posterior_models'].plot(borrowed_mu, 
-             prior_posterior_dict[len(borrowed_input_data)-1], 
-             color = 'b',
-             linestyle='dashed',
-             linewidth=2,
-             label = f'Bayesian Model final')
-    
-    axes['posterior_models'].legend()
-    #===========================================================================
-    # plt.show()
-    # print(asdf)
-    #===========================================================================
-         
+    if plot_data: 
+        axes['posterior_models'].plot(borrowed_mu, 
+                 prior_posterior_dict[len(borrowed_input_data)-1], 
+                 color = 'b',
+                 linestyle='dashed',
+                 linewidth=2,
+                 label = f'Bayesian Model final')
+        
+        axes['posterior_models'].legend()
+      
     num_x_samples= len(borrowed_input_data)
     
     top_bound = means = [compute_percentile(borrowed_mu, prior_posterior_dict[i], 0.995) for i in range(num_x_samples)]
     bottom_bound = means = [compute_percentile(borrowed_mu, prior_posterior_dict[i], 0.005) for i in range(num_x_samples)]
     means = [compute_percentile(borrowed_mu, prior_posterior_dict[i], 0.5) for i in range(num_x_samples)]
     
-    #===========================================================================
-    # axes['regression'].axhline(y=compute_percentile(borrowed_mu, power_prior, 0.5), ls = '--', color = 'k', label = 'Prior Mean')
-    #===========================================================================
-    axes['regression'].plot(range(num_x_samples), top_bound, label = '99.5% Confidence - top bound')
-    axes['regression'].plot(range(num_x_samples), bottom_bound, label = '99.5% Confidence - bottom bound')
-    axes['regression'].plot(range(num_x_samples), means, label = 'regression mean')
-    axes['regression'].legend()
-    axes['regression'].set_title('Model Convergence')
-    axes['regression'].set_xlabel("Number of samples used")
-    axes['regression'].set_ylabel("Predicted Mean $\mu$")
-    
-       
-    axes['final_model'].plot(mu, posterior_dict[len(input_data)-1], label = 'Final Posterior Model')
-    axes['final_model'].plot(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], label = 'Final Power Posterior Model')
-    axes['final_model'].axvline(x = compute_percentile(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.5), ls = '--', color = 'r', label = 'Prior Model Mean')
-    axes['final_model'].axvline(x = compute_percentile(mu, posterior_dict[len(input_data)-1], 0.5), ls = '--', color = 'k', label = 'Model Mean')
-    axes['final_model'].axvline(x = compute_percentile(mu, posterior_dict[len(input_data)-1], 0.005), ls = '--', color = 'y', label = '99% Confidence Interval')
-    axes['final_model'].axvline(x = compute_percentile(mu, posterior_dict[len(input_data)-1], 0.995), ls = '--', color = 'y')
-    axes['final_model'].axvline(x = compute_percentile(mu, posterior_dict[len(input_data)-1], 0.5-0.341), ls = '--', color = 'g', label = 'Standard Deviation')
-    axes['final_model'].axvline(x = compute_percentile(mu, posterior_dict[len(input_data)-1], 0.5+0.341), ls = '--', color = 'g')
-    axes['final_model'].legend()
-    axes['final_model'].set_title('Final Posterior Model')
-    axes['final_model'].set_xlabel("Modelled Data Values")
-    axes['final_model'].set_ylabel("Modelled Probability Density")
-    axes['final_model'].set_xlim(compute_percentile(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.00005),
-                                 compute_percentile(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.99995))
-    
-    
-    plt.show()
+    if plot_data:
+        axes['regression'].plot(range(num_x_samples), top_bound, label = '99.5% Confidence - top bound')
+        axes['regression'].plot(range(num_x_samples), bottom_bound, label = '99.5% Confidence - bottom bound')
+        axes['regression'].plot(range(num_x_samples), means, label = 'regression mean')
+        axes['regression'].legend()
+        axes['regression'].set_title('Model Convergence')
+        axes['regression'].set_xlabel("Number of samples used")
+        axes['regression'].set_ylabel("Predicted Mean $\mu$")
+        
+           
+        axes['final_model'].plot(mu, posterior_dict[len(input_data)-1], label = 'Final Posterior Model')
+        axes['final_model'].plot(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], label = 'Final Power Posterior Model')
+        axes['final_model'].axvline(x = compute_percentile(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.5), ls = '--', color = 'r', label = 'Prior Model Mean')
+        axes['final_model'].axvline(x = compute_percentile(mu, posterior_dict[len(input_data)-1], 0.5), ls = '--', color = 'k', label = 'Model Mean')
+        axes['final_model'].axvline(x = compute_percentile(mu, posterior_dict[len(input_data)-1], 0.005), ls = '--', color = 'y', label = '99% Confidence Interval')
+        axes['final_model'].axvline(x = compute_percentile(mu, posterior_dict[len(input_data)-1], 0.995), ls = '--', color = 'y')
+        axes['final_model'].axvline(x = compute_percentile(mu, posterior_dict[len(input_data)-1], 0.5-0.341), ls = '--', color = 'g', label = 'Standard Deviation')
+        axes['final_model'].axvline(x = compute_percentile(mu, posterior_dict[len(input_data)-1], 0.5+0.341), ls = '--', color = 'g')
+        axes['final_model'].legend()
+        axes['final_model'].set_title('Final Posterior Model')
+        axes['final_model'].set_xlabel("Modelled Data Values")
+        axes['final_model'].set_ylabel("Modelled Probability Density")
+        axes['final_model'].set_xlim(compute_percentile(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.00005),
+                                     compute_percentile(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.99995))
+        
+        
+        plt.show()
     
     
-    #===========================================================================
-    # print(prior_posterior_dict[len(borrowed_input_data)-1])
-    # print(compute_percentile(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.5))
-    # print(compute_percentile(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.5) - compute_percentile(mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.5-0.341))
-    #  
-    # print('not using power prior')
-    # print(posterior_dict[len(input_data)-1])
-    # print(compute_percentile(mu, posterior_dict[len(input_data)-1], 0.5))
-    # print(compute_percentile(mu, posterior_dict[len(input_data)-1], 0.5) - compute_percentile(mu, posterior_dict[len(input_data)-1], 0.5-0.341))
-    #===========================================================================
-     
-    #===========================================================================
-    # posterior_mean = compute_percentile(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.5)
-    # posterior_std = (compute_percentile(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.5+0.341) - compute_percentile(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.5-0.341))/2
-    #===========================================================================
+    posterior_mean = compute_percentile(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.5)
+    posterior_std = (compute_percentile(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.5+0.341) - compute_percentile(borrowed_mu, prior_posterior_dict[len(borrowed_input_data)-1], 0.5-0.341))/2
     
-    return prior_posterior_dict[len(input_data)-1] 
-    #===========================================================================
-    # return posterior_mean, posterior_std
-    #===========================================================================
+    print('posterior_mean',posterior_mean)
+    print('posterior_std',posterior_std)
+    return posterior_mean, posterior_std, len(borrowed_input_data)
     
     
 def identify_axes(ax_dict, fontsize=48):
