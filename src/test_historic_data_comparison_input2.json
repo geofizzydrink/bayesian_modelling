@@ -1,0 +1,14 @@
+[
+{
+	"study_datafile": "./data/current_control_data.json",
+	"historic_datafile": "./data/historic_control_data2.json",
+	"historic_data_label": "all_historic_data", 
+	 "current_data_label": "study_data", 
+	 "datafields": ["percent_survived","total_mice_start","total_mice_end","tumours"], 
+	 "alpha_levels": [0.025,0.5], 
+	 "k_values": [5], 
+	 "mouse_line": "All", 
+	 "mouse_gender": "both",
+	 "mouse_age_weeks": [0, 2000]
+ }                
+]

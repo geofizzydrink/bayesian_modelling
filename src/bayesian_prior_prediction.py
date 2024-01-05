@@ -1137,7 +1137,7 @@ def main(input_parameters='',
                                                 mu=0.0,
                                                  alpha = 0.05, 
                                                  test_type = 1)
-                                print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:μ1 - μ0 = 0 (i.e. H0:μ1 = μ0)')
+                                print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:_mu1 - _mu0 = 0 (i.e. H0:_mu1 = _mu0)')
                                 print(res.summary)
                                 print('Z Score = ',res.result[1],'p value = ',res.result[2])
                                 if (np.abs(res.result[1]) > 1.96) and (res.result[2] < 0.05):
@@ -1149,7 +1149,7 @@ def main(input_parameters='',
                                 print('Statistical Power: %.3f' % power)    
                                 
                                 print('\n\n+++++++++++++++++++++++++++++++++++++++++++++++++++')
-                                print('Assuming a proxy Standard Deviation for the NULL Control Arm based on a sampling uncertanty of 0.5 (i.e. std = sqrt((0.5 - μ0)^2) = 1.58113883×10⁻¹')
+                                print('Assuming a proxy Standard Deviation for the NULL Control Arm based on a sampling uncertanty of 0.5 (i.e. std = sqrt((0.5 - _mu0)^2) = 1.58113883×10⁻¹')
                                 sigma_0 = np.sqrt(0.5**2)
                                 control_distribution = sp_stats.norm(loc=mu_0, scale=sigma_0)
                                 
@@ -1211,7 +1211,7 @@ def main(input_parameters='',
                                                 mu=0.0,
                                                  alpha = 0.05, 
                                                  test_type = 1)
-                                print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:μ1 - μ0 = 0 (i.e. H0:μ1 = μ0)')
+                                print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:_mu1 - _mu0 = 0 (i.e. H0:_mu1 = _mu0)')
                                 print(res.summary)
                                 print('Z Score = ',res.result[1],'p value = ',res.result[3])
                                 if (np.abs(res.result[1]) > 1.96) and (res.result[3] < 0.05):
@@ -1250,7 +1250,7 @@ def main(input_parameters='',
                                 #                 mu=0.0,
                                 #                  alpha = 0.05, 
                                 #                  test_type = 1)
-                                # print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:μ1 - μ0 = 0 (i.e. H0:μ1 = μ0)')
+                                # print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:_mu1 - _mu0 = 0 (i.e. H0:_mu1 = _mu0)')
                                 # print(res.summary,res.result)
                                 # print('Z Score = ',res.result[1],'p value = ',res.result[2])
                                 # if (np.abs(res.result[1]) > 1.96) and (res.result[2] < 0.05):
@@ -1332,7 +1332,7 @@ def main(input_parameters='',
                                                 mu=0.0,
                                                  alpha = 0.05, 
                                                  test_type = 1)
-                                print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:μ1 - μ0 = 0 (i.e. H0:μ1 = μ0)')
+                                print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:_mu1 - _mu0 = 0 (i.e. H0:_mu1 = _mu0)')
                                 print(res.summary)
                                 print('Z Score = ',res.result[1],'p value = ',res.result[2])
                                 if (np.abs(res.result[1]) > 1.96) and (res.result[2] < 0.05):
@@ -1448,9 +1448,9 @@ def get_power_prior(historic_df, current_df=None, data_to_test='', mean_value=No
         Where: 
             A = area under the overlap between the historic and current normal distributions 
             
-            P = is the 'p-value' of the two-sided "z-test" with H0:μh = μ0 versus H1:μh ≠ μ0 
+            P = is the 'p-value' of the two-sided "z-test" with H0:_muh = _mu0 versus H1:_muh ≠ _mu0 
             
-                (NB: if sample number is < 30 a "t_test" with H0:μh = μ0 versus H1:μh ≠ μ0 should be used) 
+                (NB: if sample number is < 30 a "t_test" with H0:_muh = _mu0 versus H1:_muh ≠ _mu0 should be used) 
                 
             k = a calibration parameter to control the shape and scale of λ
         
@@ -1523,7 +1523,7 @@ def get_power_prior(historic_df, current_df=None, data_to_test='', mean_value=No
         if current_df.empty:
             '''
             #===================================================================
-            # perform one-sided t-test against the provided mean value (μ)
+            # perform one-sided t-test against the provided mean value (_mu)
             #===================================================================
             '''
             test_df = pd.DataFrame({data_to_test: historic_df[data_to_test].values,
@@ -1567,7 +1567,7 @@ def get_power_prior(historic_df, current_df=None, data_to_test='', mean_value=No
     '''
     #===========================================================================
     # compute Area under the overlapping normal distributions
-    c=μ2σ21−σ2(μ1σ2+σ1(μ1−μ2)2+2(σ21−σ22)log(σ1σ2)−−−−−−−−−−−−−−−−−−−−−−−−−−√)σ21−σ22
+    c=_mu2σ21−σ2(_mu1σ2+σ1(_mu1−_mu2)2+2(σ21−σ22)log(σ1σ2)−−−−−−−−−−−−−−−−−−−−−−−−−−√)σ21−σ22
     #===========================================================================
     '''
     
