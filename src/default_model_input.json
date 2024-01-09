@@ -1,0 +1,26 @@
+[
+{	
+	"test_datasets": {
+					"study_datafile": "./data/current_active_data.json",
+					"historic_datafile": "",
+					"historic_data_label": "", 
+					 "current_data_label": "main_study_data"
+					},
+	"control_datasets": {
+					"study_datafile": "./data/current_control_data.json",
+					"historic_datafile": "./data/historic_control_data.json",
+					"historic_data_label": "all_historic_control_data", 
+					 "current_data_label": "control_study_data"
+					},
+	 "datafields": ["tumours"], 
+	 "mouse_line": "All", 
+	 "mouse_gender": "female",
+	 "mouse_age_weeks": [0,150],
+	 "power_prior_lambda": 0.0,
+	 "number_of_regressions": 1000,
+	"prior_dist_type": "normal",
+	"data_x_field": "total_mice_start",
+	"data_y_field": "tumours"
+ }
+ 
+]

@@ -1,0 +1,35 @@
+{
+    "model_run_params": {
+        "study_datafile": "./data/current_control_data.json",
+        "historic_datafile": "./data/historic_control_data.json",
+        "historic_data_label": "all_female_historic_data",
+        "current_data_label": "current_study_data",
+        "datafields": [
+            "percent_survived"
+        ],
+        "alpha_levels": [
+            0.05
+        ],
+        "k_values": [
+            5
+        ],
+        "mouse_line": "All",
+        "mouse_gender": "female",
+        "mouse_age_weeks": [
+            0,
+            150
+        ]
+    },
+    "comparison_run_output": [
+        {
+            "area_under_curve": 0.7992015101612477,
+            "distribution_intercept": 77.81202520169191,
+            "data_to_test": "percent_survived",
+            "p_value": 0.9208685616528497,
+            "alpha": 0.05,
+            "k": 5,
+            "prior_lambda_ak": 0.32604795399401865,
+            "prior_lambda_apk": 0.21590848576693064
+        }
+    ]
+}

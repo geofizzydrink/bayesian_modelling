@@ -1,0 +1,15 @@
+[
+{
+	"study_datafile": "./data/current_control_data.json",
+	"historic_datafile": "./data/historic_control_data.json",
+	"historic_data_label": "all_female_historic_data", 
+	 "current_data_label": "current_study_data", 
+	 "datafields": ["percent_survived"], 
+	 "alpha_levels": [0.05], 
+	 "k_values": [5], 
+	 "mouse_line": "All", 
+	 "mouse_gender": "female",
+	 "mouse_age_weeks": [0, 150]
+ } 
+            
+]

@@ -865,6 +865,23 @@ def main(input_parameters='',
                             print(passed_df.describe().T)
                             print(passed_df.to_markdown())
                             print('--------------------')
+                            comparison_run_output_file = 'output_comparison_run.out'
+                            
+                            comparison_run_output_data = {'model_run_params':model_run_params,
+                                                         'comparison_run_output': passed_df[['area_under_curve',
+                                                                                                'distribution_intercept',
+                                                                                                'data_to_test',
+                                                                                                'p_value',
+                                                                                                'alpha',
+                                                                                                'k',
+                                                                                                'prior_lambda_ak',
+                                                                                                'prior_lambda_apk']].to_dict(orient='records')}                                        
+                                                                    
+                            with open(comparison_run_output_file,'w') as fd:
+                                fd.write(json.dumps(comparison_run_output_data, indent=4))
+                                         
+                            
+                            
             
             elif model_data:    
                 rng = np.random.default_rng()            
@@ -876,23 +893,6 @@ def main(input_parameters='',
                             study_test_data_df, study_control_data_df, historic_test_data_df, historic_control_data_df = load_data(model_run_params,
                                                                                                                                    model_run_flag=True)
                             
-                            #===================================================
-                            # print('historic_data_df',historic_data_df)
-                            # print('study_data_df',study_data_df)
-                            # print('historic_data_df total_mice_end',historic_data_df['total_mice_end'].sum())
-                            # print('study_data_df total_mice_end',study_data_df['total_mice_end'].sum())
-                            #===================================================
-                            #===================================================
-                            # find_posterior(min_x=0, 
-                            #                max_x=study_data_df['total_mice_end'].sum()-1, 
-                            #                num_x_samples=study_data_df['total_mice_end'].sum(), 
-                            #                input_data=study_data_df['tumours'].sum())
-                            # 
-                            # find_posterior(min_x=0, 
-                            #                max_x=study_data_df['total_mice_end'].sum()-1, 
-                            #                num_x_samples=study_data_df['total_mice_end'].sum(), 
-                            #                input_data=0)
-                            #===================================================
                             
                             
                             active_test_arr = np.zeros(study_test_data_df[model_run_params['data_x_field']].values[0])
@@ -908,19 +908,6 @@ def main(input_parameters='',
                             rng.shuffle(active_control_arr)
                             print(active_control_arr)
                             
-                            #===================================================
-                            # print(historic_data_df['total_mice_start'].sum())
-                            # print(historic_data_df['tumours'].sum())
-                            # num_historic_x_samples = historic_data_df['total_mice_start'].values[0]
-                            # num_historic_MM_cases = historic_data_df['tumours'][0].sum()
-                            # print(num_historic_MM_cases)
-                            # 
-                            # historic_test_arr = np.zeros(num_historic_x_samples)
-                            # for i in range(num_historic_MM_cases):
-                            #     historic_test_arr[i] = 1
-                            # rng.shuffle(historic_test_arr)
-                            # print(historic_test_arr)
-                            #===================================================
                             
                             historic_test_arr = []
                             for rec in historic_test_data_df.iterrows():
@@ -949,29 +936,6 @@ def main(input_parameters='',
                                 print(np.mean(tmp_arr))
                             
                             
-                            #===================================================
-                            # active_test_arr = sp_stats.norm.rvs(loc = 1.705, scale = 0.1, size = 1001)
-                            #  
-                            # historic_control_data_df = pd.DataFrame()
-                            # active_control_arr = sp_stats.norm.rvs(loc = 1.7, scale = 0.1, size = 1001)
-                            # historic_control_arr = sp_stats.norm.rvs(loc = 1.715, scale = 0.05, size = 1001)
-                            #===================================================
-                            
-                            
-                            #===================================================
-                            # historic_control_data_df = pd.DataFrame({'tmp':'bla'},index=[0])
-                            # active_control_arr = sp_stats.norm.rvs(loc = 1.681, scale = 0.1, size = 1001)
-                            # historic_test_arr = []
-                            # mean_heights = [1.715, 1.834, 1.658, 1.687,1.6998]
-                            # mean_stds = [0.1,0.02,0.25,0.15,0.05]
-                            # sample_size = [2000,1547,666,8989,100]
-                            #    
-                            # historic_control_arr = []
-                            # for i in range(5):
-                            #     historic_control_arr.append(sp_stats.norm.rvs(loc = mean_heights[i], 
-                            #                                                scale = mean_stds[i], 
-                            #                                                size = sample_size[i]))
-                            #===================================================
                             
                             '''   
                             #===================================================
@@ -987,7 +951,9 @@ def main(input_parameters='',
                                                                 power_prior_lambda=model_run_params['power_prior_lambda'],
                                                                 multiple_historic_datasets_flag = True
                                                                  )
-                                
+                                model_output_dict = {'control_posterior_mean': control_posteriour_dist[0],
+                                                     'control_posterior_std': control_posteriour_dist[1],
+                                                     'control_num_samples': control_posteriour_dist[2]}
                                 if 'number_of_regressions' in model_run_params.keys():
                                     if (model_run_params['power_prior_lambda'] > 0.0) and (model_run_params['number_of_regressions'] > 1):
                                     
@@ -1014,7 +980,12 @@ def main(input_parameters='',
                                         
                                         control_posteriour_dist = tmp_df['mu_0'].mean(), tmp_df['sigma_0'].mean(), int(tmp_df['tmp_num_0'].mean())
                                         print('average control_posteriour_dist', control_posteriour_dist)
-                            
+                                        model_output_dict = {'control_all_regressions_posterior_mean': tmp_df['mu_0'].values.tolist(),
+                                                             'control_all_regressions_posterior_std': tmp_df['sigma_0'].values.tolist(),
+                                                             'control_all_regressions_num_samples': tmp_df['tmp_num_0'].values.tolist(),
+                                                             'control_posterior_mean': control_posteriour_dist[0],
+                                                             'control_posterior_std': control_posteriour_dist[1],
+                                                             'control_num_samples': control_posteriour_dist[2]}
                             else:
                                 control_posteriour_dist = find_posterior(input_data=active_control_arr,
                                                                 historic_data=historic_control_arr,
@@ -1022,6 +993,9 @@ def main(input_parameters='',
                                                                 power_prior_lambda=model_run_params['power_prior_lambda'],
                                                                 multiple_historic_datasets_flag = False
                                                                  )
+                                model_output_dict = {'control_posterior_mean': control_posteriour_dist[0],
+                                                     'control_posterior_std': control_posteriour_dist[1],
+                                                     'control_num_samples': control_posteriour_dist[2]}
                             
                             
                             mu_0 = control_posteriour_dist[0]                            
@@ -1032,18 +1006,7 @@ def main(input_parameters='',
                              
                             if np.any(np.isnan(control_pdf)):
                                 null_control_data = True 
-                                #===============================================
-                                # sigma_0 = (0.5/num_samples_0)
-                                # control_distribution = sp_stats.norm(loc = mu_0, scale = sigma_0) 
-                                # control_pdf = control_distribution.pdf(np.linspace(mu_0-10*sigma_0,mu_0+10*sigma_0,num_samples_0))
-                                #===============================================
-                             
-                                #===============================================
-                                # control_pdf = get_prior(np.linspace(-1,1,num_samples_0), 
-                                #                                     distribution_type='normal',
-                                #                                     norm_mean=mu_0,
-                                #                                     norm_sigma=(0.5/num_samples_0))
-                                #===============================================
+                               
                             else:
                                 null_control_data = False
                                 
@@ -1067,6 +1030,10 @@ def main(input_parameters='',
                                                                 power_prior_lambda=model_run_params['power_prior_lambda'],
                                                                 multiple_historic_datasets_flag = False
                                                                  )
+                            model_output_dict['test_posterior_mean']= test_posteriour_dist[0]
+                            model_output_dict['test_posterior_std']= test_posteriour_dist[1]
+                            model_output_dict['test_num_samples']= test_posteriour_dist[2]
+                            
                             mu_1 = test_posteriour_dist[0]
                             sigma_1 = test_posteriour_dist[1]
                             num_samples_1 =  test_posteriour_dist[2] 
@@ -1086,24 +1053,25 @@ def main(input_parameters='',
                             #===================================================
                             fig, ax1 = plt.subplots()
                             ax1.plot(np.linspace(mu_1-10*sigma_1,mu_1+10*sigma_1,num_samples_1), 
-                                     test_pdf, label = 'test_posteriour_dist Distribution')   
-                            ax1.plot(np.linspace(mu_0-10*sigma_0,mu_0+10*sigma_0,num_samples_0),  
-                                     control_pdf, label = 'control_posteriour_dist Distribution')  
+                                     test_pdf, label = 'test_posteriour_dist Distribution')    
                             ax1.axvline(x=mu_0, ls = '--', color = 'k', label = f'mu_0 = {mu_0}')
                             ax1.axvline(x=mu_1, ls = '--', color = 'r', label = f'mu_1 = {mu_1}')
                             if null_control_data:
-                                ax1.axis([np.min([mu_1-3*sigma_1,
-                                                  mu_0-3*sigma_0]),
-                                          np.max([mu_1+3*sigma_1,
-                                                  mu_0+3*sigma_0]),
-                                          0,np.nanmax(test_pdf)+0.05*np.nanmax(test_pdf)])
-                            else:
-                                ax1.axis([np.min([mu_1-3*sigma_1,
-                                                  mu_0-3*sigma_0]),
-                                          np.max([mu_1+3*sigma_1,
-                                                  mu_0+3*sigma_0]),
-                                          0,np.max([np.nanmax(test_pdf)+0.05*np.nanmax(test_pdf),
-                                                   np.nanmax(control_pdf)+0.05*np.nanmax(control_pdf)])])
+                                print('\n\n+++++++++++++++++++++++++++++++++++++++++++++++++++')
+                                print('Assuming a proxy Standard Deviation for the NULL Control Arm based on a sampling uncertanty of 0.5 (i.e. std = sqrt((0.5 - _mu0)^2) = 1.58113883×10⁻¹')
+                                sigma_0 = np.sqrt((0.5 - mu_0)**2)
+                                control_distribution = sp_stats.norm(loc=mu_0, scale=sigma_0)
+                                control_pdf = control_distribution.pdf(np.linspace(mu_0-10*sigma_0,mu_0+10*sigma_0,num_samples_0))
+                             
+                                
+                            ax1.plot(np.linspace(mu_0-10*sigma_0,mu_0+10*sigma_0,num_samples_0),  
+                                     control_pdf, label = 'control_posteriour_dist Distribution') 
+                            ax1.axis([np.min([mu_1-3*sigma_1,
+                                              mu_0-3*sigma_0]),
+                                      np.max([mu_1+3*sigma_1,
+                                              mu_0+3*sigma_0]),
+                                      0,np.max([np.nanmax(test_pdf)+0.05*np.nanmax(test_pdf),
+                                               np.nanmax(control_pdf)+0.05*np.nanmax(control_pdf)])])
                              
                             res = stat()
                             analysis = TTestIndPower()
@@ -1126,10 +1094,10 @@ def main(input_parameters='',
                                 print('One Sided Z Score Statistics between Test Arm Distribution and the Control Arm mean')                                
                                 print(res.summary)
                                 print('Z Score = ',res.result[1],'p value = ',res.result[2])
-                                if (np.abs(res.result[1]) > 1.96) and (res.result[2] < 0.05):
-                                    print('Test Arm Distribution and Control Arm Mean is Statistically Significant')
+                                if (np.abs(res.result[1]) < 1.96):
+                                    print('Test Arm Distribution and Control Arm Mean is Statistically Similar')
                                 else:
-                                    print('Test Arm Distribution and Control Arm Mean is NOT Statistically Significant')
+                                    print('Test Arm Distribution and Control Arm Mean is NOT Statistically Similar')
                                     
                                 res.ztest(df=test_df, 
                                                  x = 'diff', 
@@ -1200,69 +1168,44 @@ def main(input_parameters='',
                                 print('Two Sided Z Score Statistics between Test Arm Distribution and the Control Arm Distribution')                                
                                 print(res.summary,res.result)
                                 print('Z Score = ',res.result[2],'p value = ',res.result[4])
-                                if (np.abs(res.result[2]) > 1.96) and (res.result[4] < 0.05):
-                                    print('Test Arm Distribution and Control Arm Distribution is Statistically Significant')
+                                if (np.abs(res.result[2]) < 1.96):
+                                    print('Test Arm Distribution and Control Arm Distribution are Statistically Similar')
+                                    significant_flag = True
                                 else:
-                                    print('Test Arm Distribution and Control Arm Distribution is NOT Statistically Significant')
-                                  
+                                    print('Test Arm Distribution and Control Arm Distribution are NOT Statistically Similar')
+                                    significant_flag = False
+                                
+                                model_output_dict['stats_distribution_comparision'] = {'zscore': res.result[2],
+                                                                                       'p_value': res.result[4],
+                                                                                       'Test_and_Control_Distributions_Statistically_Similar': significant_flag}
+                              
                                 res.ztest(df=test_df, 
                                                  x = 'diff', 
                                                 x_std = np.nanstd(test_df['diff'].values), 
                                                 mu=0.0,
                                                  alpha = 0.05, 
                                                  test_type = 1)
-                                print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:_mu1 - _mu0 = 0 (i.e. H0:_mu1 = _mu0)')
+                                print('Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:_mu1 - _mu0 = 0 (i.e. H0:_mu1 = _mu0)')
                                 print(res.summary)
                                 print('Z Score = ',res.result[1],'p value = ',res.result[3])
                                 if (np.abs(res.result[1]) > 1.96) and (res.result[3] < 0.05):
                                     print('Difference between Test Arm and Control Arm is Statistically Significant')
+                                    significant_flag = True
                                 else:
                                     print('Difference between Test Arm and Control Arm is NOT Statistically Significant')
+                                    significant_flag = False
                                 cohens_d = (mu_1 - mu_0) / (np.sqrt((sigma_1 ** 2 + sigma_0 ** 2) / 2))                                
                                 power = analysis.solve_power(cohens_d, power=None, nobs1=num_samples_1, ratio=num_samples_0/num_samples_1, alpha=0.05)
                                 print('Statistical Power: %.3f' % power)    
                                 
-                                
+                                model_output_dict['stats_difference_comparision'] = {'zscore': res.result[1],
+                                                                                       'p_value': res.result[3],
+                                                                                       'Difference_between_test_and_control_Statistically_Significant': significant_flag,
+                                                                                       'statistical_power': power}
+                              
                                     
                                 print('+++++++++++++++++++++++++++++++++++++++++++++++++++\n\n')
                                 
-                                #===============================================
-                                # print('*************************************************')
-                                # print('Assuming a Standard Deviation of 1.0 (NB: This is not correct, but necessary to reproduce the results published by Kadariya et al. 2016)')
-                                # 
-                                # res.ztest(df=test_df, 
-                                #          x = 'test_data', 
-                                #          x_std = 1.0, 
-                                #          mu=mu_0,
-                                #          alpha = 0.05, 
-                                #          test_type = 1)
-                                # print('One Sided Z Score Statistics between Test Arm Distribution and the Control Arm mean')                                
-                                # print(res.summary,res.result)
-                                # print('Z Score = ',res.result[1],'p value = ',res.result[2])
-                                # if (np.abs(res.result[1]) > 1.96) and (res.result[2] < 0.05):
-                                #     print('Test Arm Distribution and Control Arm Mean is Statistically Significant')
-                                # else:
-                                #     print('Test Arm Distribution and Control Arm Mean is NOT Statistically Significant')
-                                #     
-                                # res.ztest(df=test_df, 
-                                #                  x = 'diff', 
-                                #                 x_std = 1.0, 
-                                #                 mu=0.0,
-                                #                  alpha = 0.05, 
-                                #                  test_type = 1)
-                                # print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:_mu1 - _mu0 = 0 (i.e. H0:_mu1 = _mu0)')
-                                # print(res.summary,res.result)
-                                # print('Z Score = ',res.result[1],'p value = ',res.result[2])
-                                # if (np.abs(res.result[1]) > 1.96) and (res.result[2] < 0.05):
-                                #     print('Difference between Test Arm and Control Arm is Statistically Significant')
-                                # else:
-                                #     print('Difference between Test Arm and Control Arm is NOT Statistically Significant')
-                                # cohens_d = (mu_1 - mu_0) / (np.sqrt((1.0 ** 2 + 1.0 ** 2) / 2))                                
-                                # power = analysis.solve_power(cohens_d, power=None, nobs1=num_samples_1, ratio=num_samples_0/num_samples_1, alpha=0.05)
-                                # print('Statistical Power: %.3f' % power)    
-                                # 
-                                # print('*************************************************')
-                                #===============================================
                                 print('=====================================================')
                                 
                                 
@@ -1321,75 +1264,47 @@ def main(input_parameters='',
                                 print('Two Sided Z Score Statistics between Test Arm Distribution and the Control Arm Distribution')                                
                                 print(res.summary)
                                 print('Z Score = ',res.result[2],'p value = ',res.result[4])
-                                if (np.abs(res.result[2]) > 1.96) and (res.result[4] < 0.05):
-                                    print('Test Arm Distribution and Control Arm Distribution is Statistically Significant')
+                                if (np.abs(res.result[2]) < 1.96):
+                                    print('Test Arm Distribution and Control Arm Distribution are Statistically Similar')
+                                    significant_flag = True
                                 else:
-                                    print('Test Arm Distribution and Control Arm Distribution is NOT Statistically Significant')
-                                    
+                                    print('Test Arm Distribution and Control Arm Distribution are NOT Statistically Similar')
+                                    significant_flag = False
+                                model_output_dict['stats_distribution_comparision'] = {'zscore': res.result[2],
+                                                                                       'p_value': res.result[4],
+                                                                                       'Test_and_Control_Distributions_Statistically_Similar': significant_flag}
+                                  
                                 res.ztest(df=test_df, 
                                                  x = 'diff', 
                                                 x_std = np.nanstd(test_df['diff'].values), 
                                                 mu=0.0,
                                                  alpha = 0.05, 
                                                  test_type = 1)
-                                print('One Sided Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:_mu1 - _mu0 = 0 (i.e. H0:_mu1 = _mu0)')
+                                print('Z-score Statistics between the Test Arm vs Control Arm Difference Distribution and the Null Hypothesis H0:_mu1 - _mu0 = 0 (i.e. H0:_mu1 = _mu0)')
                                 print(res.summary)
                                 print('Z Score = ',res.result[1],'p value = ',res.result[2])
                                 if (np.abs(res.result[1]) > 1.96) and (res.result[2] < 0.05):
                                     print('Difference between Test Arm and Control Arm is Statistically Significant')
+                                    significant_flag = True
                                 else:
                                     print('Difference between Test Arm and Control Arm is NOT Statistically Significant')
+                                    significant_flag = False
                                 cohens_d = (mu_1 - mu_0) / (np.sqrt((sigma_1 ** 2 + sigma_0 ** 2) / 2))                                
                                 power = analysis.solve_power(cohens_d, power=None, nobs1=num_samples_1, ratio=num_samples_0/num_samples_1, alpha=0.05)
                                 print('Statistical Power: %.3f' % power)    
                                 
                                 
-                                #===============================================
-                                # res.ztest(df=test_df, 
-                                #                  x = 'diff', 
-                                #                 x_std = np.std(test_df['diff'].values), 
-                                #                 mu=0.0,
-                                #                  alpha = 0.05, 
-                                #                  test_type = 1)
-                                # print('diff res',res.summary,res.result)
-                                # res.ztest(df=test_df, 
-                                #                  x = 'test_data', 
-                                #                  y = 'control_data', 
-                                #                 x_std = sigma_1, 
-                                #                 y_std = sigma_0, 
-                                #                  alpha = 0.05, 
-                                #                  test_type = 2)
-                                # print('res',res.summary,res.result)
-                                # test2_df = pd.DataFrame({'test_data': test_distribution.rvs(size=1000, random_state=rng),
-                                #                         'data_type': 'test_arm'})
-                                # test2_df = pd.concat([test2_df, pd.DataFrame({'test_data': control_distribution.rvs(size=1000, random_state=rng),
-                                #                                             'data_type': 'control_arm'})])
-                                # if sigma_0 != sigma_1:
-                                #     evarFlag = False 
-                                # else:
-                                #     evarFlag = True
-                                # res.ttest(df=test2_df, 
-                                #                  xfac='data_type', 
-                                #                  res='test_data', 
-                                #                 evar=evarFlag, 
-                                #                  alpha=0.05, 
-                                #                  test_type=2)
-                                # print('res',res.summary,res.result)
-                                # sp_ttest1b = sp_stats.ttest_ind(test_df['test_data'].values, test_df['control_data'].values, 
-                                #                             alternative='two-sided',
-                                #                             equal_var=False)
-                                # sp_ttest3 = sp_stats.ttest_1samp(test_df['diff'], 
-                                #                              popmean=0.0, 
-                                #                              alternative='two-sided')
-                                # print('sp_ttest3',sp_ttest3)
-                                # print('sp_ttest1b',sp_ttest1b)
-                                #===============================================
-                            
                             
                                 print('=====================================================')  
+                                model_output_dict['stats_difference_comparision'] = {'zscore': res.result[1],
+                                                                                       'p_value': res.result[2],
+                                                                                       'Difference_between_test_and_control_Statistically_Significant': significant_flag,
+                                                                                       'statistical_power': power}
+                              
 
                             
-                            ax1.legend()    
+                            ax1.legend()  
+                            json.dump(model_output_dict,open('output_model_run.json','w'))  
                             
                       
         plt.show()          
